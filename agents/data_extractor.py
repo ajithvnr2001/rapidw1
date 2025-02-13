@@ -1,13 +1,13 @@
 # agents/data_extractor.py (CORRECTED - ABSOLUTELY, POSITIVELY FINAL)
 from core.glpi import GLPIClient
-from langchain.tools import tool, Tool  # Import Tool
+from langchain.tools import Tool  # Import Tool
 from typing import Optional, List
 from pydantic import ConfigDict
 from crewai import Agent
 
 class DataExtractorAgent(Agent):
     glpi_client: GLPIClient  #  Declare glpi_client as a field with type hint!
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True) # keep this
 
     def __init__(self, glpi_client: GLPIClient):
         super().__init__(
