@@ -1,12 +1,12 @@
 # agents/data_extractor.py
 from core.glpi import GLPIClient
 from langchain.tools import tool
-from typing import Optional  # Import Optional
+from typing import Optional, Callable
 from pydantic import ConfigDict
 from crewai import Agent
 
 class DataExtractorAgent(Agent):
-    model_config = ConfigDict(arbitrary_types_allowed=True)
+    model_config = ConfigDict(arbitrary_types_allowed=True, ignored_types=(Callable,)) # Add ignored_types here
 
     def __init__(self, glpi_client: GLPIClient):
         super().__init__(
