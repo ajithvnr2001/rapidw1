@@ -1,4 +1,4 @@
-# main.py (Corrected)
+# main.py (CORRECTED - FINALLY)
 from crewai import Crew, Task, Process
 from agents.data_extractor import DataExtractorAgent
 from agents.data_processor import DataProcessorAgent
@@ -48,18 +48,14 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
             description=f"Extract content of document ID {document_id}",
             agent=data_extractor_agent,
             expected_output="Raw document content",
-            context=[],  # No context needed for document extraction
         )
+
+        # IMPORTANT:  Tasks now receive the *results* of previous tasks as inputs.
         process_data_task = Task(
             description="Process the extracted data from GLPI",
             agent=data_processor_agent,
             expected_output="Cleaned and structured data",
-            context=[
-                extract_incident_task,
-                extract_document_task,
-                extract_solution_task,
-                extract_tasks_task,
-            ],
+            context=[extract_incident_task, extract_document_task, extract_solution_task, extract_tasks_task]
         )
         generate_content_task = Task(
             description="Generate report content using RAG",
@@ -102,28 +98,29 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
             verbose=2,
         )
 
-        result = crew.kickoff()
+        result = crew.kickoff()  # Result is a single value, the output of the LAST task.
 
-        # Access the processed data from the result of process_data_task
-        processed_data = result[process_data_task]
-        generated_content = result[generate_content_task]
-        # Update 'content' and 'solution' fields before indexing
-        processed_data['generated_content'] = generated_content
-        pdf_content = result[create_pdf_task]
-        final_result = result[index_pdf_task]
+        # Access results by task output
+        incident_data = extract_incident_task.output().result
+        solution_data = extract_solution_task.output().result
+        task_data = extract_tasks_task.output().result
+        document_data = extract_document_task.output().result
+
+        processed_data = data_processor_agent.process_glpi_data(incident_data, document_data, solution_data, task_data)
+        pdf_content = create_pdf_task.output().result
 
 
         if update_solution:
+           updated_solution = generate_content_task.output().result # Get the generated content
+           solution_update_result = glpi_client.update_ticket_solution(incident_id, updated_solution)
 
-            solution_update_result = glpi_client.update_ticket_solution(
-                incident_id, processed_data['solution']
-            )
-            if solution_update_result:
+           if solution_update_result:
                 print(f"Solution for incident {incident_id} updated successfully.")
-            else:
+           else:
                 print(f"Failed to update solution for incident {incident_id}.")
-
-        return {"status": "success", "result" : final_result}
+        # Index the PDF after updating (or attempting to update) the solution.
+        index_result = search_indexer_agent.index_and_store_pdf(pdf_content, processed_data)
+        return {"status": "success", "result" : index_result}
 
     except Exception as e:
         print(f"Error in run_autopdf: {e}")
