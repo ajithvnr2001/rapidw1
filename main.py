@@ -29,29 +29,29 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
 
         # ... rest of your Task definitions and Crew setup ...
 
-        extract_incident_task = Task(
-            description=f"Extract details for GLPI incident ID {incident_id}",
-            agent=data_extractor_agent,
-            expected_output="Raw data of the incident",
-        )
-        extract_solution_task = Task(
-            description=f"Extract solution for GLPI incident ID {incident_id}",
-            agent=data_extractor_agent,
-            expected_output="Raw solution data",
-            context=[data_extractor_agent]
-        )
-        extract_tasks_task = Task(
-            description=f"Extract tasks for GLPI incident ID {incident_id}",
-            agent=data_extractor_agent,
-            expected_output="Raw tasks data",
-            context=[data_extractor_agent]
-        )
-        document_id = 12345  # TODO: Get this dynamically from GLPI.  Placeholder.
-        extract_document_task = Task(
-            description=f"Extract content of document ID {document_id}",
-            agent=data_extractor_agent,
-            expected_output="Raw document content",
-        )
+        # extract_incident_task = Task(
+        #     description=f"Extract details for GLPI incident ID {incident_id}",
+        #     agent=data_extractor_agent,
+        #     expected_output="Raw data of the incident",
+        # )
+        # extract_solution_task = Task(
+        #     description=f"Extract solution for GLPI incident ID {incident_id}",
+        #     agent=data_extractor_agent,
+        #     expected_output="Raw solution data",
+        #     context=[data_extractor_agent]
+        # )
+        # extract_tasks_task = Task(
+        #     description=f"Extract tasks for GLPI incident ID {incident_id}",
+        #     agent=data_extractor_agent,
+        #     expected_output="Raw tasks data",
+        #     context=[data_extractor_agent]
+        # )
+        # document_id = 12345  # TODO: Get this dynamically from GLPI.  Placeholder.
+        # extract_document_task = Task(
+        #     description=f"Extract content of document ID {document_id}",
+        #     agent=data_extractor_agent,
+        #     expected_output="Raw document content",
+        # )
 
         # IMPORTANT:  Tasks now receive the *results* of previous tasks as inputs.
         process_data_task = Task(
@@ -89,10 +89,10 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
                 search_indexer_agent,
             ],
             tasks=[
-                extract_incident_task,
-                extract_solution_task,
-                extract_tasks_task,
-                extract_document_task,
+                # extract_incident_task,
+                # extract_solution_task,
+                # extract_tasks_task,
+                # extract_document_task,
                 process_data_task,
                 generate_content_task,
                 create_pdf_task,
