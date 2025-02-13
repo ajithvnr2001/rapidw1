@@ -1,4 +1,4 @@
-# agents/data_extractor.py (Simplified for debugging)
+# agents/data_extractor.py (Minimal agent)
 from crewai import Agent
 from pydantic import ConfigDict
 
