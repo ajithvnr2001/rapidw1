@@ -1,0 +1,16 @@
+crewai
+langchain
+langchain-community
+reportlab
+python-dotenv
+requests
+meilisearch
+boto3
+fastapi
+uvicorn
+pydantic
+unstructured[all-docs]
+lxml
+beautifulsoup4
+pydantic-settings
+langgraph  # Add this line
