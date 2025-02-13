@@ -1,6 +1,6 @@
-# agents/data_extractor.py (CORRECTED - ABSOLUTELY, POSITIVELY FINAL)
+# agents/data_extractor.py
 from core.glpi import GLPIClient
-from langchain.tools import Tool  # Import Tool, not tool
+from langchain.tools import Tool
 from typing import Optional, List
 from pydantic import ConfigDict
 from crewai import Agent
@@ -10,12 +10,13 @@ class DataExtractorAgent(Agent):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, glpi_client: GLPIClient):
+        print("DEBUG: DataExtractorAgent.__init__ CALLED. glpi_client:", glpi_client)  # Add this line
         super().__init__(
             role='Data Extractor',
             goal='Retrieve and validate raw data from GLPI',
             backstory="""Expert in extracting data from various sources,
             especially GLPI. Resilient to API issues and data inconsistencies.""",
-            tools=self.create_tools(),  # Use create_tools() method
+            tools=self.create_tools(),
             verbose=True,
             allow_delegation=False
         )
@@ -28,7 +29,8 @@ class DataExtractorAgent(Agent):
             Tool(name="Get GLPI Ticket Solution", func=self.get_glpi_ticket_solution, description="Retrieves the solution field from a GLPI ticket."),
             Tool(name="Get GLPI Ticket Tasks", func=self.get_glpi_ticket_tasks, description="Retrieves the tasks from a GLPI ticket.")
         ]
-    
+
+
     def get_glpi_incident_details(self, incident_id: int) -> str:
         """Fetches details for a specific incident from GLPI."""
         try:
@@ -38,7 +40,7 @@ class DataExtractorAgent(Agent):
             print(f"Error in get_glpi_incident_details: {e}")
             return ""
 
-    
+
     def get_glpi_document_content(self, document_id: int) -> str:
         """Fetches the content of a document from GLPI."""
         try:
@@ -48,7 +50,7 @@ class DataExtractorAgent(Agent):
             print(f"Error in get_glpi_document_content: {e}")
             return ""
 
-    
+
     def get_glpi_ticket_solution(self, ticket_id: int) -> str:
         """Retrieves the solution field from a GLPI ticket."""
         try:
@@ -57,7 +59,7 @@ class DataExtractorAgent(Agent):
             print(f"Error in get_glpi_ticket_solution: {e}")
             return ""
 
-    
+
     def get_glpi_ticket_tasks(self, ticket_id: int) -> str:
         """Retrieves the tasks from a GLPI ticket."""
         try:
