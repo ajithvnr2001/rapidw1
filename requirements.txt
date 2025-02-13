@@ -13,4 +13,5 @@ unstructured[all-docs]
 lxml
 beautifulsoup4
 pydantic-settings
-langgraph  # Add this line
+langgraph
+PyYAML==5.3.1  # Add this line to pin PyYAML version
