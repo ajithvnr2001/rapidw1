@@ -1,6 +1,6 @@
-# agents/data_extractor.py (CORRECTED - ABSOLUTELY, POSITIVELY FINAL)
-from core.glpi import GLPIClient
-from langchain.tools import Tool  # Import Tool
+# agents/data_extractor.py (Modified with explicit import)
+from core.glpi import GLPIClient  # Explicit import - ADD THIS LINE
+from langchain.tools import Tool
 from typing import Optional, List
 from pydantic import ConfigDict
 from crewai import Agent
