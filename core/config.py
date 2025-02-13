@@ -1,8 +1,8 @@
+# core/config.py (Modified)
 import os
 from dotenv import load_dotenv
-from pydantic_settings import BaseSettings
+from pydantic_settings import BaseSettings, SettingsConfigDict
 from pydantic import Field, HttpUrl
-
 
 load_dotenv()
 
@@ -21,4 +21,13 @@ class Settings(BaseSettings):
     bucket_name: str = "rapidwrite"
     max_rag_iterations: int = 3
 
+    model_config = SettingsConfigDict(env_file=".env", extra="ignore")
+
 settings = Settings()
+
+# Add these print statements AFTER settings = Settings()
+print("DEBUG: Settings loaded from .env:")
+print(f"DEBUG: GLPI_URL: {settings.glpi_url}")
+print(f"DEBUG: GLPI_APP_TOKEN: {settings.glpi_app_token}")
+print(f"DEBUG: GLPI_USER_TOKEN: {settings.glpi_user_token}")
+print("DEBUG: -----------------------")
