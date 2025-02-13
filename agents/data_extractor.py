@@ -1,12 +1,13 @@
 # agents/data_extractor.py
 from core.glpi import GLPIClient
 from langchain.tools import tool
-from typing import Optional, Callable
+from typing import Optional, List
 from pydantic import ConfigDict
-from crewai import Agent
+from crewai import Agent, Tool
+
 
 class DataExtractorAgent(Agent):
-    model_config = ConfigDict(arbitrary_types_allowed=True, ignored_types=(Callable,)) # Add ignored_types here
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, glpi_client: GLPIClient):
         super().__init__(
@@ -14,11 +15,19 @@ class DataExtractorAgent(Agent):
             goal='Retrieve and validate raw data from GLPI',
             backstory="""Expert in extracting data from various sources,
             especially GLPI. Resilient to API issues and data inconsistencies.""",
+            tools=self.get_tools(),  # Pass tools here
             verbose=True,
             allow_delegation=False
         )
         self.glpi_client = glpi_client
 
+    def get_tools(self) -> List[Tool]:
+        return [
+            self.get_glpi_incident_details,
+            self.get_glpi_document_content,
+            self.get_glpi_ticket_solution,
+            self.get_glpi_ticket_tasks
+        ]
     @tool
     def get_glpi_incident_details(self, incident_id: int) -> str:
         """Fetches details for a specific incident from GLPI."""
