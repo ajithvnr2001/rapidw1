@@ -17,15 +17,17 @@ app = FastAPI()
 def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
     """Runs the AutoPDF workflow for a given incident ID."""
 
-    glpi_client = GLPIClient()  # Keep GLPIClient instantiation for now
+    glpi_client = GLPIClient()  # Initialize inside the function
 
     try:
-        # Use the simplified DataExtractorAgent, no glpi_client argument
-        data_extractor_agent = DataExtractorAgent() # No glpi_client argument
-        data_processor_agent = DataProcessorAgent() # Not used in simplified version
-        query_handler_agent = QueryHandlerAgent() # Not used
-        pdf_generator_agent = PDFGeneratorAgent() # Not used
-        search_indexer_agent = SearchIndexerAgent() # Not used
+        # Correct instantiation: Pass glpi_client here
+        data_extractor_agent = DataExtractorAgent(glpi_client=glpi_client)
+        data_processor_agent = DataProcessorAgent()
+        query_handler_agent = QueryHandlerAgent()
+        pdf_generator_agent = PDFGeneratorAgent()
+        search_indexer_agent = SearchIndexerAgent()
+
+        # ... rest of your Task definitions and Crew setup ...
 
         # process_data_task = Task(  # Keep ONLY this Task definition
         #     description="Process the extracted data from GLPI",
