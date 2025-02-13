@@ -1,4 +1,4 @@
-# main.py (CORRECTED - FINALLY, TRULY)
+# main.py (CORRECTED - FINALLY)
 from crewai import Crew, Task, Process
 from agents.data_extractor import DataExtractorAgent
 from agents.data_processor import DataProcessorAgent
@@ -35,11 +35,13 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
             description=f"Extract solution for GLPI incident ID {incident_id}",
             agent=data_extractor_agent,
             expected_output="Raw solution data",
+            context=[extract_incident_task]
         )
         extract_tasks_task = Task(
             description=f"Extract tasks for GLPI incident ID {incident_id}",
             agent=data_extractor_agent,
             expected_output="Raw tasks data",
+            context=[extract_incident_task]
         )
         document_id = 12345  # TODO: Get this dynamically from GLPI.  Placeholder.
         extract_document_task = Task(
@@ -48,30 +50,32 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
             expected_output="Raw document content",
         )
 
-        # IMPORTANT: Tasks now receive the *results* of previous tasks as inputs.
+        # IMPORTANT:  Tasks now receive the *results* of previous tasks as inputs.
         process_data_task = Task(
             description="Process the extracted data from GLPI",
             agent=data_processor_agent,
             expected_output="Cleaned and structured data",
-            context=[data_extractor_agent],  # Pass only the necessary AGENT for context
+            context=[data_extractor_agent, data_processor_agent,query_handler_agent,pdf_generator_agent,search_indexer_agent],  # Provide the AGENTS for context
+            # We'll pass the actual data as arguments (see below).
         )
         generate_content_task = Task(
             description="Generate report content using RAG",
             agent=query_handler_agent,
             expected_output="Generated content for the report",
-            context=[data_processor_agent],  # Pass only necessary agents.
+            context=[process_data_task], # Pass the agent!
         )
+
         create_pdf_task = Task(
             description="Create a PDF report",
             agent=pdf_generator_agent,
             expected_output="PDF file as bytes.",
-            context=[query_handler_agent], # Pass only necessary agents.
+            context=[generate_content_task],  # Pass the agent!
         )
         index_pdf_task = Task(
             description="Store PDF and index",
             agent=search_indexer_agent,
             expected_output="Confirmation message",
-            context=[pdf_generator_agent, data_processor_agent],  # Pass only necessary agents
+            context=[create_pdf_task, process_data_task, data_processor_agent, pdf_generator_agent, query_handler_agent], # Pass the agents!
         )
 
         crew = Crew(
@@ -116,7 +120,6 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
                 print(f"Solution for incident {incident_id} updated successfully.")
            else:
                 print(f"Failed to update solution for incident {incident_id}.")
-
         # Index the PDF after updating (or attempting to update) the solution.
         index_result = search_indexer_agent.index_and_store_pdf(pdf_content, processed_data)
         return {"status": "success", "result" : index_result}
@@ -127,13 +130,14 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
     finally:
         glpi_client.close_session()  # Always close the session
 
+
+
 @app.post("/webhook")
 async def glpi_webhook(request: Request):
     """Handles incoming webhooks from GLPI."""
     try:
         body = await request.body()
         data = json.loads(body.decode())
-        results = []  # Store results for multiple incidents
 
         if not isinstance(data, list):
             raise HTTPException(status_code=400, detail="Invalid webhook payload format")
@@ -150,22 +154,19 @@ async def glpi_webhook(request: Request):
                     print(f"Received event: {event['event']} for Ticket ID: {incident_id}")
                     print("*" * 50)
                     if event["event"] == "update":
-                        result = run_autopdf(incident_id, update_solution=True)  # Pass update flag
+                         run_autopdf(incident_id, update_solution=True)
                     else:
-                        result = run_autopdf(incident_id) # No update needed for "add"
-                    results.append({
-                        "incident_id": incident_id,
-                        "status": result.get("status"),  # Use .get() to avoid KeyError
-                        "result": result.get("result"),
-                    })
+                        run_autopdf(incident_id)  # Don't update solution on add
                 else:
                     print(f"Ignoring event type: {event['event']} for Ticket")
-        return {"message": "Webhooks received and processed", "results": results} # Return results
+
+        return {"message": "Webhook received and processed"}  # Consistent return
     except json.JSONDecodeError:
         raise HTTPException(status_code=400, detail="Invalid JSON payload")
     except Exception as e:
-        print(f"Error in webhook: {e}")  # Correctly print the exception
-        raise HTTPException(status_code=500, detail=str(e)) # Pass on the error message
+        print(f"Error in webhook: {e}")
+        raise HTTPException(status_code=500, detail=f"Internal server error: {e}")
+
 
 @app.get("/")
 async def root():
