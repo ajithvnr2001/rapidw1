@@ -1,4 +1,4 @@
-# agents/data_extractor.py (CORRECTED - ABSOLUTELY, POSITIVELY FINAL)
+# agents/data_extractor.py (CORRECTED - FINAL)
 from core.glpi import GLPIClient
 from langchain.tools import Tool  # Import Tool
 from typing import Optional, List
@@ -7,7 +7,7 @@ from crewai import Agent
 
 class DataExtractorAgent(Agent):
     glpi_client: GLPIClient  #  Declare glpi_client as a field with type hint!
-    model_config = ConfigDict(arbitrary_types_allowed=True) # keep this
+    model_config = ConfigDict(arbitrary_types_allowed=True)
 
     def __init__(self, glpi_client: GLPIClient):
         super().__init__(
@@ -28,6 +28,7 @@ class DataExtractorAgent(Agent):
             Tool(name="Get GLPI Ticket Solution", func=self.get_glpi_ticket_solution, description="Retrieves the solution field from a GLPI ticket."),
             Tool(name="Get GLPI Ticket Tasks", func=self.get_glpi_ticket_tasks, description="Retrieves the tasks from a GLPI ticket.")
         ]
+
     
     def get_glpi_incident_details(self, incident_id: int) -> str:
         """Fetches details for a specific incident from GLPI."""
