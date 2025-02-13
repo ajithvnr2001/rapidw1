@@ -1,12 +1,17 @@
-# agents/data_extractor.py (Option 1 - BEST)
+#agents/data_extractor.py
 from core.glpi import GLPIClient
-from langchain.tools import tool, Tool  # Import Tool
-from typing import Optional, List
+from langchain.tools import tool
+from typing import Optional, ClassVar, Any
 from pydantic import ConfigDict
 from crewai import Agent
 
 class DataExtractorAgent(Agent):
-    model_config = ConfigDict(arbitrary_types_allowed=True)  # Allow arbitrary types
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+    get_glpi_incident_details: ClassVar[Any]
+    get_glpi_document_content: ClassVar[Any]
+    get_glpi_ticket_solution: ClassVar[Any]
+    get_glpi_ticket_tasks: ClassVar[Any]
+    glpi_client: GLPIClient  # Type hint
 
     def __init__(self, glpi_client: GLPIClient):
         super().__init__(
@@ -14,35 +19,11 @@ class DataExtractorAgent(Agent):
             goal='Retrieve and validate raw data from GLPI',
             backstory="""Expert in extracting data from various sources,
             especially GLPI. Resilient to API issues and data inconsistencies.""",
-            tools=self._create_tools(),  # Define tools here
             verbose=True,
             allow_delegation=False
         )
-        self.glpi_client = glpi_client
+        self.glpi_client = glpi_client  # Assign the client
 
-    def _create_tools(self) -> List[Tool]:
-        return [
-            Tool(
-                name="Get GLPI Incident Details",
-                func=self.get_glpi_incident_details,
-                description="Fetches details for a specific incident from GLPI."
-            ),
-            Tool(
-                name="Get GLPI Document Content",
-                func=self.get_glpi_document_content,
-                description="Fetches the content of a document from GLPI."
-            ),
-            Tool(
-                name="Get GLPI Ticket Solution",
-                func=self.get_glpi_ticket_solution,
-                description="Retrieves the solution field from a GLPI ticket."
-            ),
-            Tool(
-                name="Get GLPI Ticket Tasks",
-                func=self.get_glpi_ticket_tasks,
-                description="Retrieves the tasks from a GLPI ticket."
-            )
-        ]
     @tool
     def get_glpi_incident_details(self, incident_id: int) -> str:
         """Fetches details for a specific incident from GLPI."""
