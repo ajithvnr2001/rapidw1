@@ -1,106 +1,79 @@
-# main.py (Simplified for Debugging)
+# main.py (Modified for Direct Debugging)
 from crewai import Crew, Task, Process
 from agents.data_extractor import DataExtractorAgent
-from agents.data_processor import DataProcessorAgent  # Import, but not used in simplified version
-from agents.query_handler import QueryHandlerAgent # Import, but not used
-from agents.pdf_generator import PDFGeneratorAgent # Import, but not used
-from agents.search_indexer import SearchIndexerAgent # Import, but not used
 from core.glpi import GLPIClient
 from core.config import settings
 from typing import Dict
 from fastapi import FastAPI, Request, HTTPException
 from datetime import datetime
 import json
+from pydantic import ValidationError  # Import ValidationError
 
 app = FastAPI()
 
 def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
     """Runs the AutoPDF workflow for a given incident ID."""
 
-    glpi_client = GLPIClient()  # Initialize inside the function
+    glpi_client = GLPIClient()  # Initialize GLPIClient
 
     try:
-        print(f"DEBUG: glpi_client type: {type(glpi_client)}")  # Add this line
-        data_extractor_agent = DataExtractorAgent(glpi_client=glpi_client)
-        data_processor_agent = DataProcessorAgent()
-        query_handler_agent = QueryHandlerAgent()
-        pdf_generator_agent = PDFGeneratorAgent()
-        search_indexer_agent = SearchIndexerAgent()
+        agent = DataExtractorAgent(glpi_client=glpi_client)  # Instantiate DataExtractorAgent
+        print("DataExtractorAgent instantiated SUCCESSFULLY")  # Success message
+        print(f"Agent glpi_client: {agent.glpi_client}") # Print agent.glpi_client
+        print(f"Agent tools: {agent.tools}") # Print agent.tools
+        return {"status": "success", "message": "DataExtractorAgent instantiated successfully and checked"}
 
-        # ... rest of your Task definitions and Crew setup ...
-
-        # ... rest of your Task definitions and Crew setup ...
-
-        # process_data_task = Task(  # Keep ONLY this Task definition
-        #     description="Process the extracted data from GLPI",
-        #     agent=data_processor_agent,
-        #     expected_output="Cleaned and structured data",
-        #     context=[data_extractor_agent],
-        # )
-
-        # crew = Crew(  # Comment out Crew definition
-        #     agents=[
-        #         data_extractor_agent,
-        #         data_processor_agent,
-        #         query_handler_agent,
-        #         pdf_generator_agent,
-        #         search_indexer_agent,
-        #     ],
-        #     tasks=[
-        #         process_data_task, # Keep ONLY process_data_task in tasks
-        #     ],
-        #     process=Process.sequential,
-        #     verbose=2,
-        # )
-
-        # result = crew.kickoff()  # Comment out kickoff
-
-        return {"status": "success", "message": "Simplified agent instantiated and tasks commented out"} # Modified return
-
+    except ValidationError as e:
+        print("ValidationError DETECTED in run_autopdf:")
+        print(e)
+        return {"status": "error", "message": "ValidationError during DataExtractorAgent instantiation", "error_details": str(e)}
     except Exception as e:
-        print(f"Error in run_autopdf: {e}")
-        return {"status": "error", "message": str(e)}
+        print(f"Unexpected Error in run_autopdf: {e}")
+        return {"status": "error", "message": f"Unexpected error: {e}"}
     finally:
         glpi_client.close_session()
 
-
 @app.post("/webhook")
 async def glpi_webhook(request: Request):
-    """Handles incoming webhooks from GLPI."""
-    try:
-        body = await request.body()
-        data = json.loads(body.decode())
-        results = []
+    # This whole function is now COMMENTED OUT for debugging
+    pass
+    # """Handles incoming webhooks from GLPI."""
+    # try:
+    #     body = await request.body()
+    #     data = json.loads(body.decode())
+    #     results = []
 
-        if not isinstance(data, list):
-            raise HTTPException(status_code=400, detail="Invalid webhook payload format")
+    #     if not isinstance(data, list):
+    #         raise HTTPException(status_code=400, detail="Invalid webhook payload format")
 
-        for event in data:
-            if "event" not in event or "itemtype" not in event or "items_id" not in event:
-                raise HTTPException(status_code=400, detail="Missing required fields in event")
+    #     for event in data:
+    #         if "event" not in event or "itemtype" not in event or "items_id" not in event:
+    #             raise HTTPException(status_code=400, detail="Missing required fields in event")
 
-            if event["itemtype"] == "Ticket":
-                incident_id = int(event["items_id"])
+    #         if event["itemtype"] == "Ticket":
+    #             incident_id = int(event["items_id"])
 
-                if event["event"] in ("add", "update"):
-                    print("*" * 50)
-                    print(f"Received event: {event['event']} for Ticket ID: {incident_id}")
-                    print("*" * 50)
-                    result = run_autopdf(incident_id) # Call run_autopdf
-                    results.append(result)
-                else:
-                    print(f"Ignoring event type: {event['event']} for Ticket")
-        return results
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid JSON payload")
-    except Exception as e:
-        print(f"Error in webhook: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
+    #             if event["event"] in ("add", "update"):
+    #                 print("*" * 50)
+    #                 print(f"Received event: {event['event']} for Ticket ID: {incident_id}")
+    #                 print("*" * 50)
+    #                 result = run_autopdf(incident_id, update_solution=True)
+    #                 results.append(result)
+    #             else:
+    #                 print(f"Ignoring event type: {event['event']} for Ticket")
+    #     return results
+    # except json.JSONDecodeError:
+    #     raise HTTPException(status_code=400, detail="Invalid JSON payload")
+    # except Exception as e:
+    #     print(f"Error in webhook: {e}")
+    #     raise HTTPException(status_code=500, detail=str(e))
 
 
 @app.get("/")
 async def root():
-    return {"message": "AutoPDF is running!"}
+    # Call run_autopdf directly when accessing the root URL for testing
+    test_result = run_autopdf(incident_id=123, update_solution=False) # Example incident ID
+    return {"message": "AutoPDF is running!", "debug_result": test_result}
 
 
 if __name__ == "__main__":
