@@ -6,7 +6,7 @@ from agents.query_handler import QueryHandlerAgent
 from agents.pdf_generator import PDFGeneratorAgent
 from agents.search_indexer import SearchIndexerAgent
 from core.glpi import GLPIClient
-from core.config import settings  # Import settings
+from core.config import settings
 from typing import Dict
 from fastapi import FastAPI, Request, HTTPException
 from datetime import datetime
@@ -48,30 +48,32 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
             expected_output="Raw document content",
         )
 
-        # IMPORTANT: Tasks now receive the *results* of previous tasks as inputs.
+        # IMPORTANT:  Tasks now receive the *results* of previous tasks as inputs.
         process_data_task = Task(
             description="Process the extracted data from GLPI",
             agent=data_processor_agent,
             expected_output="Cleaned and structured data",
-            context=[data_extractor_agent],
+            context=[data_extractor_agent, data_processor_agent,query_handler_agent,pdf_generator_agent,search_indexer_agent],  # Provide the AGENTS for context
+            # We'll pass the actual data as arguments (see below).
         )
         generate_content_task = Task(
             description="Generate report content using RAG",
             agent=query_handler_agent,
             expected_output="Generated content for the report",
-            context=[process_data_task],
+            context=[data_processor_agent], # Pass the agent!
         )
+
         create_pdf_task = Task(
             description="Create a PDF report",
             agent=pdf_generator_agent,
             expected_output="PDF file as bytes.",
-            context=[generate_content_task],
+            context=[query_handler_agent],  # Pass the agent!
         )
         index_pdf_task = Task(
             description="Store PDF and index",
             agent=search_indexer_agent,
             expected_output="Confirmation message",
-            context=[create_pdf_task, process_data_task],  # Pass process_data_task here
+            context=[create_pdf_task, process_data_task, data_processor_agent, pdf_generator_agent, query_handler_agent], # Pass the agents!
         )
 
         crew = Crew(
@@ -95,7 +97,6 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
             process=Process.sequential,
             verbose=2,
         )
-
 
         result = crew.kickoff()  # Result is a single value, the output of the LAST task.
         return result
@@ -130,7 +131,7 @@ async def glpi_webhook(request: Request):
                     print(f"Received event: {event['event']} for Ticket ID: {incident_id}")
                     print("*" * 50)
                     if event["event"] == "update":
-                        run_autopdf(incident_id, update_solution=True)
+                         run_autopdf(incident_id, update_solution=True)
                     else:
                         run_autopdf(incident_id)  # Don't update solution on add
                 else:
