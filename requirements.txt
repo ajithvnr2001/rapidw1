@@ -8,7 +8,7 @@ meilisearch
 boto3
 fastapi
 uvicorn
-pydantic
+pydantic==2.5.0
 unstructured[all-docs]
 lxml
 beautifulsoup4
