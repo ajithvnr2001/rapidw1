@@ -20,12 +20,14 @@ def run_autopdf(incident_id: int, update_solution: bool = False) -> Dict:
     glpi_client = GLPIClient()  # Initialize inside the function
 
     try:
-        # Correct instantiation: Pass glpi_client here
+        print(f"DEBUG: glpi_client type: {type(glpi_client)}")  # Add this line
         data_extractor_agent = DataExtractorAgent(glpi_client=glpi_client)
         data_processor_agent = DataProcessorAgent()
         query_handler_agent = QueryHandlerAgent()
         pdf_generator_agent = PDFGeneratorAgent()
         search_indexer_agent = SearchIndexerAgent()
+
+        # ... rest of your Task definitions and Crew setup ...
 
         # ... rest of your Task definitions and Crew setup ...
 
